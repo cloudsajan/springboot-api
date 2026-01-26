@@ -1,0 +1,44 @@
+name: Build & Deploy Spring Boot API
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        install_components: 'gke-gcloud-auth-plugin'
+
+    - name: Configure Docker
+      run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+    - name: Build & Push Image
+      run: |
+        IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ github.sha }}
+        docker build -t $IMAGE .
+        docker push $IMAGE
+
+    - name: Get GKE Credentials
+      run: |
+        gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER }} \
+          --zone ${{ secrets.GKE_ZONE }} \
+          --project ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Deploy with Helm
+      run: |
+        helm upgrade --install api ./helm \
+          --set image.repository=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/api \
+          --set image.tag=${{ github.sha }}
+

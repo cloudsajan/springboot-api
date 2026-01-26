@@ -1,0 +1,11 @@
+image:
+  repository: asia-south1-docker.pkg.dev/useful-builder-482612-b6/gke-repo/api
+  tag: latest
+
+service:
+  port: 8080
+
+ingress:
+  host: api.solosajan.com
+  tlsSecret: api-tls
+
