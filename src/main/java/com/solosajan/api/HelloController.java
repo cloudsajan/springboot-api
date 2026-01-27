@@ -13,7 +13,7 @@ public class HelloController {
 
     @GetMapping("/hello")
     public String hello() {
-        return "Hello from GKE Spring Boot API!";
+        return "Hello from GKE Spring Boot API - NEW VERSION deployed at " + java.time.LocalDateTime.now();
     }
 }
 
